@@ -58,17 +58,19 @@ void inicializaciaLED(void)
 	GPIO_Init(GPIOA, &gpioInitStruc);
 }
 
-int main(void)
+void inicializaciaADCpin(void)
 {
 	GPIO_InitTypeDef GPIO_InitStructure;
-	ADC_InitTypeDef ADC_InitStructure;
-	/* Enable GPIO clock */
-	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE);//Opravi a upravi
 	/* Configure ADCx Channel 2 as analog input */
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_4 ;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AN;
 	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL ;
 	GPIO_Init(GPIOA, &GPIO_InitStructure);
+}
+
+void inicializaciaADC(void)
+{
+	ADC_InitTypeDef ADC_InitStructure;
 	/* Enable the HSI oscillator */
 	RCC_HSICmd(ENABLE);
 	/* Check that HSI oscillator is ready */
@@ -92,12 +94,22 @@ int main(void)
 	while(ADC_GetFlagStatus(ADC1, ADC_FLAG_ADONS) == RESET)
 	{
 	}
+}
+int main(void)
+{
+	/* Enable GPIO clock */
+	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE);
+
+
+
 
 	int value = 0;
 	int blikac = 0;
 	int blikacRychlost = 100000;
 
 	//inicializacia periferii
+	inicializaciaADCpin();
+	inicializaciaADC();
 	inicializaciaLED();
 
   /* Infinite loop */
@@ -114,28 +126,23 @@ int main(void)
 	  ADC_SoftwareStartConv(ADC1);
 	  while(!ADC_GetFlagStatus(ADC1, ADC_FLAG_EOC)){}
 	  value=ADC_GetConversionValue(ADC1);
-	  if(value >= 3550 && value <= 4096)
+	  if(value >= 3550 && value <= 3800)
 	  {
 		  blikacRychlost = 200000;
 	  }
 	  else if(value > 3200 && value < 3550)
 	  {
-		  blikacRychlost = 100000;
+		  blikacRychlost = 50000;
 
 	  }
 	  else if(value >= 2400 && value <= 3200)
 	  {
-		  blikacRychlost = 50000;
+		  blikacRychlost = 20000;
 
 	  }
 	  else if(value >= 0 && value < 2400)
 	  {
-		  blikacRychlost = 30000;
-
-	  }
-	  else
-	  {
-		  blikacRychlost = 100000;
+		  blikacRychlost = 5000;
 
 	  }
   }
