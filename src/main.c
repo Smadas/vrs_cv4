@@ -61,7 +61,7 @@ void inicializaciaLED(void)
 void inicializaciaADCpin(void)
 {
 	GPIO_InitTypeDef GPIO_InitStructure;
-	/* Configure ADCx Channel 2 as analog input */
+	/* Configure ADCx Channel 4 as analog input */
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_4 ;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AN;
 	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL ;
@@ -95,56 +95,72 @@ void inicializaciaADC(void)
 	{
 	}
 }
+
+int blikanieLED(int blikac, int blikacRychlost){
+	blikac++;
+	if (blikac > blikacRychlost)
+	{
+	  blikac = 0;
+	  GPIO_ToggleBits(GPIOA, GPIO_Pin_5);
+	}
+	return blikac;
+}
+
+uint16_t citanieHodnotyADC(void)
+{
+	ADC_SoftwareStartConv(ADC1);
+	while(!ADC_GetFlagStatus(ADC1, ADC_FLAG_EOC)){}
+	return ADC_GetConversionValue(ADC1);
+}
+
+int rychlostBlikaniaLED(int blikacRychlost,uint16_t value)
+{
+	if(value >= 3550 && value <= 3800)
+	{
+	  return 200000;
+	}
+	else if(value > 3200 && value < 3550)
+	{
+	  return 50000;
+
+	}
+	else if(value >= 2600 && value <= 3200)
+	{
+	  return 20000;
+
+	}
+	else if(value >= 0 && value < 2600)
+	{
+	  return 5000;
+	}
+	else
+	{
+		return blikacRychlost;
+	}
+}
+
+
 int main(void)
 {
 	/* Enable GPIO clock */
 	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE);
 
-
-
-
 	int value = 0;
 	int blikac = 0;
-	int blikacRychlost = 100000;
+	int blikacRychlost = 200000;
 
 	//inicializacia periferii
 	inicializaciaADCpin();
 	inicializaciaADC();
 	inicializaciaLED();
 
-  /* Infinite loop */
   while (1)
   {
-	  //blikanie
-	  blikac++;
-	  if (blikac > blikacRychlost)
-	  {
-		  blikac = 0;
-		  GPIO_ToggleBits(GPIOA, GPIO_Pin_5);
-	  }
-	  /* Start ADC Software Conversion */
-	  ADC_SoftwareStartConv(ADC1);
-	  while(!ADC_GetFlagStatus(ADC1, ADC_FLAG_EOC)){}
-	  value=ADC_GetConversionValue(ADC1);
-	  if(value >= 3550 && value <= 3800)
-	  {
-		  blikacRychlost = 200000;
-	  }
-	  else if(value > 3200 && value < 3550)
-	  {
-		  blikacRychlost = 50000;
 
-	  }
-	  else if(value >= 2400 && value <= 3200)
-	  {
-		  blikacRychlost = 20000;
+	  blikac = blikanieLED(blikac, blikacRychlost);
+	  value = citanieHodnotyADC();
+	  blikacRychlost = rychlostBlikaniaLED(blikacRychlost,value);
 
-	  }
-	  else if(value >= 0 && value < 2400)
-	  {
-		  blikacRychlost = 5000;
-
-	  }
   }
   return 0;
 }
